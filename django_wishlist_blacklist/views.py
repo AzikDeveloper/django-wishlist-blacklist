@@ -8,6 +8,12 @@ from rest_framework.exceptions import ValidationError
 from django.db.utils import IntegrityError
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.contenttypes.models import ContentType
+from .signals import (
+    post_add_to_wishlist,
+    post_remove_from_wishlist,
+    post_add_to_blacklist,
+    post_remove_from_blacklist,
+)
 
 
 class WishlistBlacklistActionMixin:
@@ -15,7 +21,7 @@ class WishlistBlacklistActionMixin:
 
     @staticmethod
     def remove(request, _type, target_ct, target_pk):
-        author = get_user_author(request)
+        author = get_user_author(request.user)
         bind = ModelBind.objects.filter(
             author_content_type=ContentType.objects.get_for_model(author),
             author_object_id=author.pk,
@@ -25,6 +31,10 @@ class WishlistBlacklistActionMixin:
         ).first()
         if bind:
             bind.delete()
+            if _type == ModelBind.TypeChoices.WISHLIST:
+                post_remove_from_wishlist.send(sender=ModelBind, instance=bind)
+            elif _type == ModelBind.TypeChoices.BLACKLIST:
+                post_remove_from_blacklist.send(sender=ModelBind, instance=bind)
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_404_NOT_FOUND)
 
@@ -32,7 +42,7 @@ class WishlistBlacklistActionMixin:
     def add(request, _type, target_ct, target_pk):
         author = get_user_author(request.user)
         try:
-            ModelBind.objects.create(
+            bind = ModelBind.objects.create(
                 author_content_type=ContentType.objects.get_for_model(author),
                 author_object_id=author.pk,
                 target_content_type=target_ct,
@@ -42,6 +52,10 @@ class WishlistBlacklistActionMixin:
         except IntegrityError:
             return Response(status=status.HTTP_409_CONFLICT)
         else:
+            if _type == ModelBind.TypeChoices.WISHLIST:
+                post_add_to_wishlist.send(sender=ModelBind, instance=bind)
+            elif _type == ModelBind.TypeChoices.BLACKLIST:
+                post_add_to_blacklist.send(sender=ModelBind, instance=bind)
             return Response(status=status.HTTP_201_CREATED)
 
     def get_action_handler(self, action: str):
