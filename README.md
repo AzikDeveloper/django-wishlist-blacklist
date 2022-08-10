@@ -1,6 +1,8 @@
-## django-wishlist-blacklist
+# django-wishlist-blacklist
 
 ### Easily manage blacklist and wishlist in your Django project.
+
+
 
 ## Installation
 
