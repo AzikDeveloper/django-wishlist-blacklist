@@ -9,6 +9,15 @@
 ```bash
 pip install django-wishlist-blacklist (soon in pip)
 ```
+Add `django_wishlist_blacklist` to your INSTALLED_APPS:
+
+```python
+INSTALLED_APPS = [
+    ...
+    'django_wishlist_blacklist',
+    ...
+]
+```
 
 ## Usage:
 
@@ -38,16 +47,6 @@ True
 ```
 
 ## Ready API for blacklisting and wishlisting
-
-Add `django_wishlist_blacklist` to your INSTALLED_APPS:
-
-```python
-INSTALLED_APPS = [
-    ...
-    'django_wishlist_blacklist',
-    ...
-]
-```
 
 Add `django_wishlist_blacklist.urls` to your URL patterns:
 
