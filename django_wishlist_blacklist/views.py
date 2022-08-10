@@ -60,7 +60,7 @@ class WishlistBlacklistActionMixin:
 
     def get_action_handler(self, action: str):
         if action.lower() in self.allowed_actions:
-            return getattr(self, action)
+            return getattr(self, action.lower())
         else:
             raise ValidationError(f"Action {action} is not allowed. Allowed actions: {self.allowed_actions}")
 
