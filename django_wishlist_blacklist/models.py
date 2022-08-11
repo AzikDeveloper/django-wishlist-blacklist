@@ -72,33 +72,33 @@ class WishlistAuthorModel(models.Model):
         abstract = True
 
     def is_wishlisted(self, obj):
-        self._check_model_is_target(obj.__class__)
+        self._check_model_is_wishlist_target(obj.__class__)
         return self.my_wishlists.filter(
             target_object_id=obj.pk,
             target_content_type=ContentType.objects.get_for_model(obj),
         ).exists()
 
     def add_to_wishlist(self, obj):
-        self._check_model_is_target(obj.__class__)
+        self._check_model_is_wishlist_target(obj.__class__)
         return self.my_wishlists.create(
             target_content_type=ContentType.objects.get_for_model(obj),
             target_object_id=obj.pk
         )
 
     def remove_from_wishlist(self, obj):
-        self._check_model_is_target(obj.__class__)
+        self._check_model_is_wishlist_target(obj.__class__)
         return self.my_wishlists.filter(
             target_content_type=ContentType.objects.get_for_model(obj),
             target_object_id=obj.pk
         ).delete()
 
     def get_wishlists(self, model):
-        self._check_model_is_target(model)
+        self._check_model_is_wishlist_target(model)
         return self.my_wishlists.filter(
             target_content_type=ContentType.objects.get_for_model(model)
         )
 
-    def _check_model_is_target(self, model):
+    def _check_model_is_wishlist_target(self, model):
         if not issubclass(model, WishlistTargetModel):
             raise TypeError(
                 f"{model.__name__} cannot be used as a wishlist item. "
@@ -125,33 +125,33 @@ class BlacklistAuthorModel(models.Model):
         abstract = True
 
     def is_blacklisted(self, obj):
-        self._check_model_is_target(obj.__class__)
+        self._check_model_is_blacklist_target(obj.__class__)
         return self.my_blacklists.filter(
             target_object_id=obj.pk,
             target_content_type=ContentType.objects.get_for_model(obj),
         ).exists()
 
     def add_to_blacklist(self, obj):
-        self._check_model_is_target(obj.__class__)
+        self._check_model_is_blacklist_target(obj.__class__)
         return self.my_blacklists.create(
             target_content_type=ContentType.objects.get_for_model(obj),
             target_object_id=obj.pk
         )
 
     def remove_from_blacklist(self, obj):
-        self._check_model_is_target(obj.__class__)
+        self._check_model_is_blacklist_target(obj.__class__)
         return self.my_blacklists.filter(
             target_content_type=ContentType.objects.get_for_model(obj),
             target_object_id=obj.pk
         ).delete()
 
     def get_blacklists(self, model):
-        self._check_model_is_target(model)
+        self._check_model_is_blacklist_target(model)
         return self.my_blacklists.filter(
             target_content_type=ContentType.objects.get_for_model(model)
         )
 
-    def _check_model_is_target(self, model):
+    def _check_model_is_blacklist_target(self, model):
         if not issubclass(model, BlacklistTargetModel):
             raise TypeError(
                 f"{model.__name__} cannot be used as a blacklist item. "
