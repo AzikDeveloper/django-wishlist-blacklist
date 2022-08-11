@@ -64,7 +64,7 @@ class Blacklist(BaseModelBinder):
         verbose_name_plural = _("blacklists")
 
 
-class WishlistAuthorModelMixin(models.Model):
+class WishlistAuthorModel(models.Model):
     my_wishlists = GenericRelation(Wishlist, related_query_name="wishlisted_by", object_id_field="author_object_id",
                                    content_type_field="author_content_type")
 
@@ -72,30 +72,52 @@ class WishlistAuthorModelMixin(models.Model):
         abstract = True
 
     def is_wishlisted(self, obj):
+        self._check_model_is_target(obj.__class__)
         return self.my_wishlists.filter(
             target_object_id=obj.pk,
             target_content_type=ContentType.objects.get_for_model(obj),
         ).exists()
 
     def add_to_wishlist(self, obj):
+        self._check_model_is_target(obj.__class__)
         return self.my_wishlists.create(
             target_content_type=ContentType.objects.get_for_model(obj),
             target_object_id=obj.pk
         )
 
     def remove_from_wishlist(self, obj):
+        self._check_model_is_target(obj.__class__)
         return self.my_wishlists.filter(
             target_content_type=ContentType.objects.get_for_model(obj),
             target_object_id=obj.pk
         ).delete()
 
     def get_wishlists(self, model):
+        self._check_model_is_target(model)
         return self.my_wishlists.filter(
             target_content_type=ContentType.objects.get_for_model(model)
         )
 
+    def _check_model_is_target(self, model):
+        if not issubclass(model, WishlistTargetModel):
+            raise TypeError(
+                f"{model.__name__} cannot be used as a wishlist item. "
+                "Did you forget to inherit from WishlistTargetModel?"
+            )
 
-class BlacklistAuthorModelMixin(models.Model):
+
+class WishlistTargetModel(models.Model):
+    target_wishlists = GenericRelation(
+        Wishlist,
+        object_id_field="target_object_id",
+        content_type_field="target_content_type"
+    )
+
+    class Meta:
+        abstract = True
+
+
+class BlacklistAuthorModel(models.Model):
     my_blacklists = GenericRelation(Blacklist, related_query_name="blacklisted_by", object_id_field="author_object_id",
                                     content_type_field="author_content_type")
 
@@ -103,27 +125,50 @@ class BlacklistAuthorModelMixin(models.Model):
         abstract = True
 
     def is_blacklisted(self, obj):
+        self._check_model_is_target(obj.__class__)
         return self.my_blacklists.filter(
             target_object_id=obj.pk,
             target_content_type=ContentType.objects.get_for_model(obj),
         ).exists()
 
     def add_to_blacklist(self, obj):
+        self._check_model_is_target(obj.__class__)
         return self.my_blacklists.create(
             target_content_type=ContentType.objects.get_for_model(obj),
             target_object_id=obj.pk
         )
 
     def remove_from_blacklist(self, obj):
+        self._check_model_is_target(obj.__class__)
         return self.my_blacklists.filter(
             target_content_type=ContentType.objects.get_for_model(obj),
             target_object_id=obj.pk
         ).delete()
 
     def get_blacklists(self, model):
+        self._check_model_is_target(model)
         return self.my_blacklists.filter(
             target_content_type=ContentType.objects.get_for_model(model)
         )
 
+    def _check_model_is_target(self, model):
+        if not issubclass(model, BlacklistTargetModel):
+            raise TypeError(
+                f"{model.__name__} cannot be used as a blacklist item. "
+                "Did you forget to inherit from BlacklistTargetModel?"
+            )
 
-__all__ = ['Wishlist', 'Blacklist', 'WishlistAuthorModelMixin', 'BlacklistAuthorModelMixin']
+
+class BlacklistTargetModel(models.Model):
+    target_blacklists = GenericRelation(
+        Blacklist,
+        object_id_field="target_object_id",
+        content_type_field="target_content_type"
+    )
+
+    class Meta:
+        abstract = True
+
+
+__all__ = ['Wishlist', 'Blacklist', 'WishlistAuthorModel', 'WishlistTargetModel', 'BlacklistAuthorModel',
+           'BlacklistTargetModel']
