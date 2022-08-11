@@ -1,7 +1,7 @@
-from .views import WishlistBlacklistView
+from .views import WishlistView, BlacklistView
 from django.urls import path
 
-app_name = "binder"
 urlpatterns = [
-    path('<str:action>/', WishlistBlacklistView.as_view(), name='binder'),
+    path('wishlist/<str:action>/', WishlistView.as_view(), name='wishlist'),
+    path('blacklist/<str:action>/', BlacklistView.as_view(), name='blacklist'),
 ]

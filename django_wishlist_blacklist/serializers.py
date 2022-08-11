@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from .models import ModelBind
 from django.contrib.contenttypes.models import ContentType
 from django.utils.translation import gettext_lazy as _
 from django.utils.encoding import smart_str
@@ -31,25 +30,18 @@ class ContentTypeField(serializers.RelatedField):
         return obj.pk
 
 
-class _BinderSerializer(serializers.ModelSerializer):
+class BinderSerializer(serializers.Serializer):
     default_error_messages = {
         'does_not_exist': _('{model_name} with pk={pk} does not exist.'),
     }
     target_ct = ContentTypeField()
-
-    class Meta:
-        model = ModelBind
-        fields = [
-            "target_ct",
-            "target_object_id",
-            "type",
-        ]
+    target_object_id = serializers.CharField()
 
     def validate(self, attrs):
         #  TODO: create a custom field for target_object_id and move this validation to it?
         target_model = attrs["target_ct"].model_class()
         try:
-            target_model.objects.get(pk=attrs["target_object_id"])
+            target_model._default_manager.get(pk=attrs["target_object_id"])
         except target_model.DoesNotExist:
             raise ValidationError({
                 "target_object_id": self.error_messages['does_not_exist'].format(
@@ -58,6 +50,9 @@ class _BinderSerializer(serializers.ModelSerializer):
                 )
             })
         return super().validate(attrs)
+
+
+"""PUBLIC API STARTS HERE"""
 
 
 class WishlistStateSerializerMixin:
@@ -71,7 +66,11 @@ class WishlistStateSerializerMixin:
                 "Did you forget to inherit from binder.models.WishlistModelMixin?"
             )
         self.fields["is_wishlisted"] = serializers.SerializerMethodField()
-        self._wishlists = list(author.get_wishlists(self.get_serializer_model()).values_list("pk", flat=True))
+        self._wishlists = list(
+            author.get_wishlists(self.get_serializer_model()).values_list("target_object_id", flat=True)
+        )
+        print(self._wishlists)
+        print(author)
 
     def get_serializer_model(self):
         return self.Meta.model
@@ -101,15 +100,11 @@ class BlacklistStateModelSerializerMixin:
 
 
 class WishlistStateModelSerializer(WishlistStateSerializerMixin, serializers.ModelSerializer):
-
-    def get_serializer_model(self):
-        return self.Meta.model
+    pass
 
 
 class BlacklistStateModelSerializer(BlacklistStateModelSerializerMixin, serializers.ModelSerializer):
-
-    def get_serializer_model(self):
-        return self.Meta.model
+    pass
 
 
-__all__ = ['WishlistStateSerializerMixin', 'WishlistStateModelSerializer', '_BinderSerializer']
+__all__ = ['WishlistStateSerializerMixin', 'WishlistStateModelSerializer', 'BinderSerializer']

@@ -1,11 +1,19 @@
 from django.contrib import admin
 
-from .models import ModelBind
+from .models import Wishlist, Blacklist
 
 
-@admin.register(ModelBind)
-class AdminModelBind(admin.ModelAdmin):
-    list_display = ['author', 'target', 'type']
-    list_filter = ['type']
+class BaseModelBinderAdmin(admin.ModelAdmin):
+    list_display = ['author', 'target']
+    list_filter = ['created_at']
     search_fields = ['author', 'target']
 
+
+@admin.register(Wishlist)
+class WishlistAdmin(BaseModelBinderAdmin):
+    pass
+
+
+@admin.register(Blacklist)
+class BlacklistAdmin(BaseModelBinderAdmin):
+    pass
