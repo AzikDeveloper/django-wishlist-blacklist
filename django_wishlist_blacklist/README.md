@@ -7,6 +7,7 @@
 ```bash
 pip install django-wishlist-blacklist (soon in pip)
 ```
+
 Add `django_wishlist_blacklist` to your INSTALLED_APPS:
 
 ```python
@@ -17,15 +18,24 @@ INSTALLED_APPS = [
 ]
 ```
 
-## Usage:
+## Usage for wishlisting:
 
-Inherit from `django_wishlist_blacklist.models.WishlistAuthorModelMixin` or
-`django_wishlist_blacklist.models.BlacklistAuthorModelMixin` in your User model:
+Inherit from `django_wishlist_blacklist.models.WishlistAuthorModel` for your User model and
+`django_wishlist_blacklist.models.WishlistTargetModel` for your Product model:
 
 ```python
-class User(WishlistAuthorModelMixin, BlacklistAuthorModelMixin, AbstractUser)
+from django_wishlist_blacklist.models import WishlistAuthorModel
+
+
+class User(WishlistAuthorModel, AbstractUser)
+    pass
+
+
+class Product(WishlistTargetModel)
     pass
 ```
+
+And we are done!
 
 ## Usage Example
 
@@ -61,7 +71,7 @@ urlpatterns = [
 `POST /wb/wishlist/add/`
 
 ```json
- {
+{
   "target_ct": "product.Product",
   "target_object_id": 9
 }
@@ -72,7 +82,7 @@ urlpatterns = [
 `POST /wb/wishlist/remove/`
 
 ```json
- {
+{
   "target_ct": "product.Product",
   "target_object_id": 9
 }
@@ -110,3 +120,6 @@ class ProductSerializer(WishlistStateSerializerMixin, serializers.ModelSerialize
     }
 ]
 ```
+
+### Blacklisting works the same way as wishlisting
+
