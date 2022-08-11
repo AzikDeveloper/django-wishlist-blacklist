@@ -24,7 +24,7 @@ Inherit from `django_wishlist_blacklist.models.WishlistAuthorModel` for your Use
 `django_wishlist_blacklist.models.WishlistTargetModel` for your Product model:
 
 ```python
-from django_wishlist_blacklist.models import WishlistAuthorModel
+from django_wishlist_blacklist.models import WishlistAuthorModel, WishlistTargetModel
 
 
 class User(WishlistAuthorModel, AbstractUser)
