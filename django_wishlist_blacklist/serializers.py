@@ -30,7 +30,7 @@ class ContentTypeField(serializers.RelatedField):
         return obj.pk
 
 
-class BinderSerializer(serializers.Serializer):
+class _BinderSerializer(serializers.Serializer):
     default_error_messages = {
         'does_not_exist': _('{model_name} with pk={pk} does not exist.'),
     }
@@ -38,10 +38,9 @@ class BinderSerializer(serializers.Serializer):
     target_object_id = serializers.CharField()
 
     def validate(self, attrs):
-        #  TODO: create a custom field for target_object_id and move this validation to it?
         target_model = attrs["target_ct"].model_class()
         try:
-            target_model._default_manager.get(pk=attrs["target_object_id"])
+            target = target_model._default_manager.get(pk=attrs["target_object_id"])
         except target_model.DoesNotExist:
             raise ValidationError({
                 "target_object_id": self.error_messages['does_not_exist'].format(
@@ -49,7 +48,8 @@ class BinderSerializer(serializers.Serializer):
                     pk=attrs["target_object_id"]
                 )
             })
-        return super().validate(attrs)
+        attrs.update({"target": target})
+        return attrs
 
 
 """PUBLIC API STARTS HERE"""
@@ -60,20 +60,10 @@ class WishlistStateSerializerMixin:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         author = get_user_author(self.context["request"].user)
-        if not hasattr(author, "get_wishlists"):
-            raise Exception(
-                f"{author.__class__.__name__} object does not have get_wishlists method. "
-                "Did you forget to inherit from binder.models.WishlistModelMixin?"
-            )
         self.fields["is_wishlisted"] = serializers.SerializerMethodField()
         self._wishlists = list(
-            author.get_wishlists(self.get_serializer_model()).values_list("target_object_id", flat=True)
+            author.get_wishlists(self.Meta.model).values_list("target_object_id", flat=True)
         )
-        print(self._wishlists)
-        print(author)
-
-    def get_serializer_model(self):
-        return self.Meta.model
 
     def get_is_wishlisted(self, obj):
         return obj.pk in self._wishlists
@@ -84,27 +74,13 @@ class BlacklistStateModelSerializerMixin:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         author = get_user_author(self.context["request"].user)
-        if not hasattr(author, "get_blacklists"):
-            raise Exception(
-                f"{author.__class__.__name__} object does not have get_blacklists method. "
-                "Did you forget to inherit from binder.models.BlacklistModelMixin?"
-            )
         self.fields["is_blacklisted"] = serializers.SerializerMethodField()
-        self._blacklists = list(author.get_blacklists(self.get_serializer_model()).values_list("pk", flat=True))
-
-    def get_serializer_model(self):
-        return self.Meta.model
+        self._blacklists = list(
+            author.get_blacklists(self.Meta.model).values_list("target_object_id", flat=True)
+        )
 
     def get_is_blacklisted(self, obj):
         return obj.pk in self._blacklists
 
 
-class WishlistStateModelSerializer(WishlistStateSerializerMixin, serializers.ModelSerializer):
-    pass
-
-
-class BlacklistStateModelSerializer(BlacklistStateModelSerializerMixin, serializers.ModelSerializer):
-    pass
-
-
-__all__ = ['WishlistStateSerializerMixin', 'WishlistStateModelSerializer', 'BinderSerializer']
+__all__ = ['WishlistStateSerializerMixin', 'BlacklistStateModelSerializerMixin', '_BinderSerializer']
