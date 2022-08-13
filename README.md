@@ -1,14 +1,13 @@
-# django-wishlist-blacklist
+## django-wishlist-blacklist
 
 ### Easily manage blacklist and wishlist in your Django project.
-
-
 
 ## Installation
 
 ```bash
 pip install django-wishlist-blacklist (soon in pip)
 ```
+
 Add `django_wishlist_blacklist` to your INSTALLED_APPS:
 
 ```python
@@ -19,15 +18,24 @@ INSTALLED_APPS = [
 ]
 ```
 
-## Usage:
+## Usage for wishlisting:
 
-Inherit from `django_wishlist_blacklist.models.WishlistAuthorModelMixin` or
-`django_wishlist_blacklist.models.BlacklistAuthorModelMixin` in your User model:
+Inherit from `django_wishlist_blacklist.models.WishlistAuthorModel` for your User model and
+`django_wishlist_blacklist.models.WishlistTargetModel` for your Product model:
 
 ```python
-class User(WishlistAuthorModelMixin, BlacklistAuthorModelMixin, AbstractUser)
+from django_wishlist_blacklist.models import WishlistAuthorModel, WishlistTargetModel
+
+
+class User(WishlistAuthorModel, AbstractUser)
+    pass
+
+
+class Product(WishlistTargetModel)
     pass
 ```
+
+And we are done!
 
 ## Usage Example
 
@@ -53,42 +61,40 @@ Add `django_wishlist_blacklist.urls` to your URL patterns:
 ```python
 urlpatterns = [
     ...
-    url(r'^wishlist-blacklist/', include('django_wishlist_blacklist.urls')),
+    url(r'^wb/', include('django_wishlist_blacklist.urls')),
     ...
 ]
 ```
 
 ### Example to add product to wishlist:
 
-`POST /wishlist-blacklist/add/`
+`POST /wb/wishlist/add/`
 
 ```json
- {
+{
   "target_ct": "product.Product",
-  "target_object_id": 9,
-  "type": "wishlist"
+  "target_object_id": 9
 }
 ```
 
 ### Example to remove product from wishlist:
 
-`POST /wishlist-blacklist/remove/`
+`POST /wb/wishlist/remove/`
 
 ```json
- {
+{
   "target_ct": "product.Product",
-  "target_object_id": 9,
-  "type": "wishlist"
+  "target_object_id": 9
 }
 ```       
 
 ## Base serializer for appending `is_wishlisted` and `is_blacklisted` fields to serializer
 
 ```python
-from django_wishlist_blacklist.serializers import WishlistStateModelSerializer
+from django_wishlist_blacklist.serializers import WishlistStateSerializerMixin
 
 
-class ProductSerializer(WishlistStateModelSerializer):
+class ProductSerializer(WishlistStateSerializerMixin, serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ('id', 'name', 'brand', 'created_at')
@@ -114,3 +120,6 @@ class ProductSerializer(WishlistStateModelSerializer):
     }
 ]
 ```
+
+### Blacklisting works the same way as wishlisting
+
