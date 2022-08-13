@@ -55,32 +55,55 @@ class _BinderSerializer(serializers.Serializer):
 """PUBLIC API STARTS HERE"""
 
 
-class WishlistStateSerializerMixin:
+class BaseBindStateSerializer:
+    BIND_FIELD_NAME = None
+
+    def _get_authenticated_user(self):
+        request = self.context.get("request") or getattr(self.root, "context", {}).get("request")
+        user = self.context.get("user") or getattr(self.root, "context", {}).get("user")
+        if request:
+            if request.user.is_authenticated:
+                return request.user
+        elif user:
+            if user.is_authenticated:
+                return user
+        return None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        author = get_user_author(self.context["request"].user)
-        self.fields["is_wishlisted"] = serializers.SerializerMethodField()
-        self._wishlists = list(
-            author.get_wishlists(self.Meta.model).values_list("target_object_id", flat=True)
-        )
+        self.fields[self.BIND_FIELD_NAME] = serializers.SerializerMethodField(method_name=f"get_{self.BIND_FIELD_NAME}")
+
+        user = self._get_authenticated_user()
+        if user:
+            author = get_user_author(user)
+            self._binds = list(
+                self._get_my_binds(author).values_list("target_object_id", flat=True)
+            )
+        else:
+            self._binds = []
+
+    def _get_my_binds(self, author):
+        raise NotImplementedError()
+
+
+class WishlistStateSerializerMixin(BaseBindStateSerializer):
+    BIND_FIELD_NAME = "is_wishlisted"
 
     def get_is_wishlisted(self, obj):
-        return obj.pk in self._wishlists
+        return obj.pk in self._binds
+
+    def _get_my_binds(self, author):
+        return author.get_wishlists(self.Meta.model)
 
 
-class BlacklistStateModelSerializerMixin:
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        author = get_user_author(self.context["request"].user)
-        self.fields["is_blacklisted"] = serializers.SerializerMethodField()
-        self._blacklists = list(
-            author.get_blacklists(self.Meta.model).values_list("target_object_id", flat=True)
-        )
+class BlacklistStateModelSerializerMixin(BaseBindStateSerializer):
+    BIND_FIELD_NAME = "is_blacklisted"
 
     def get_is_blacklisted(self, obj):
-        return obj.pk in self._blacklists
+        return obj.pk in self._binds
+
+    def _get_my_binds(self, author):
+        return author.get_blacklists(self.Meta.model)
 
 
 __all__ = ['WishlistStateSerializerMixin', 'BlacklistStateModelSerializerMixin', '_BinderSerializer']
